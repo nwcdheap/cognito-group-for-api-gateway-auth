@@ -1,0 +1,233 @@
+
+
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+	<title>Cognito Auth JS SDK Sample</title>
+	<meta charset="UTF-8">
+	<link rel="stylesheet" href="stylesheets/styleSheetStart.css">
+	<script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
+	<script src="js/amazon-cognito-auth.min.js"></script>
+	<script src="js/bundle.js"/></script> 
+	<script src="https://sdk.amazonaws.com/js/aws-sdk-2.485.0.min.js"></script> 
+
+	</script> 
+</head>
+
+<body  onload="onLoad()">
+	<ul>
+	  <li><a href="https://aws.amazon.com/cognito/" target="_blank"
+           title="Go to AWS Cognito Console">Cognito Console</a></li>
+	  <li><a href="http://docs.aws.amazon.com/cognito/latest/developerguide/what-is-amazon-cognito.html"
+           target="_blank" title="See Cognito developer docs">Docs</a></li>
+	</ul>
+
+	<h1>
+		<a href="http://docs.aws.amazon.com/cognito/latest/developerguide/what-is-amazon-cognito.html" target="_blank">
+			<img src="img/MobileServices_AmazonCognito.png" alt="Amazon Cognito" title="Amazon Cognito"
+           style="width:144px;height:144px;"></a><br>
+		Amazon Cognito Auth Demo
+	</h1>
+
+	<div class="centeredText">
+		<p id="introPara" title="About this demo">
+      此页面demo了Cognito的基本用法，cognito token的解析内容，以及利用cognito：group对API Gateway进行权限管理控制的方法。更多内容请参考cognito的<a href="http://docs.aws.amazon.com/cognito/latest/developerguide/what-is-amazon-cognito.html">Developer Guide</a>.<br>
+      <br>
+		</p>
+	</div>
+
+  <div><br></div>
+  <div>
+      <p id="statusNotAuth" title="Status">
+          Sign-In to Continue
+      </p>
+      <p id="statusAuth" title="Status">
+          You have Signed-In
+      </p>
+  </div>
+
+	<div class="tabsWell">
+		<div id="startButtons">
+			<div class="button">
+				<a class="nav-tabs" id="signInButton" href="#" title="Sign in">Sign In</a>
+			</div>
+		</div>
+
+		<div class="tab-content">
+			<div class="tab-pane" id="userdetails">
+				<p class="text-icon" title="Minimize" id="tabIcon" onclick="toggleTab('usertab');">_</p>
+				<br>
+				<h2 id="usertabtitle">Tokens</h2>
+				<div class="user-form" id="usertab">
+					<pre id="idtoken"> ... </pre>
+		            <pre id="acctoken"> ... </pre>
+		            <pre id="reftoken"> ... </pre>
+		         </div>
+
+			</div>
+		</div>
+	</div>
+	<script>
+	// Operations when the web page is loaded.
+
+	function onLoad() {
+		var i, items, tabs;
+		items = document.getElementsByClassName("tab-pane");
+		for (i = 0; i < items.length; i++) {
+			items[i].style.display = 'none';
+		}
+		document.getElementById("statusNotAuth").style.display = 'block';
+		document.getElementById("statusAuth").style.display = 'none';
+		// Initiatlize CognitoAuth object
+		var auth = initCognitoSDK();
+		document.getElementById("signInButton").addEventListener("click", function() {
+			userButton(auth);
+		});
+		var curUrl = window.location.href;
+		auth.parseCognitoWebResponse(curUrl);
+	}
+  // Operation when tab is closed.
+	function closeTab(tabName) {
+	  document.getElementById(tabName).style.display = 'none';
+	}
+  // Operation when tab is opened.
+  function openTab(tabName) {
+		document.getElementById(tabName).style.display = 'block';
+	}
+  // Operations about toggle tab.
+	function toggleTab(tabName) {
+		if (document.getElementById("usertab").style.display == 'none') {
+			document.getElementById("usertab").style.display = 'block';
+			document.getElementById("tabIcon").innerHTML = '_';
+		} else {
+			document.getElementById("usertab").style.display = 'none';
+			document.getElementById("tabIcon").innerHTML = '+';
+		}
+	}
+  // Operations when showing message.
+	function showMessage(msgTitle, msgText, msgDetail) {
+		//var msgTab = document.getElementById('message');
+		document.getElementById('messageTitle').innerHTML = msgTitle;
+		document.getElementById('messageText').innerHTML = msgText;
+		document.getElementById('messageDetail').innerHTML = msgDetail;
+		//msgTab.style.display = "block";
+	}
+  // Perform user operations.
+	function userButton(auth) {
+		var state = document.getElementById('signInButton').innerHTML;
+		if (state === "Sign Out") {
+			document.getElementById("signInButton").href="https://<your-custom-domain-name>/logout?response_type=code&client_id=<app-client-id>&logout_uri=http://localhost:8000";
+			document.getElementById("signInButton").innerHTML = "Sign In";
+			auth.signOut();
+			showSignedOut();
+
+		} else {
+			//session_info = auth.getSession();
+			//console.log(session_info);
+			document.getElementById("signInButton").href="https://<your-custom-domain-name>/login?response_type=code&client_id=<app-client-id>&redirect_uri=http://localhost:8000";
+
+		}
+	}
+	// Operations when signed in.
+  function showSignedIn(session) {
+		document.getElementById("statusNotAuth").style.display = 'none';
+		document.getElementById("statusAuth").style.display = 'block';
+		document.getElementById("signInButton").innerHTML = "Sign Out";
+		//var id_token="";
+		var cognito_groups;
+		if (session) {
+			var idToken = session.getIdToken().getJwtToken();
+			if (idToken) {
+				//id_token =idToken
+				var payload = idToken.split('.')[1];
+				var tokenobj = JSON.parse(atob(payload));
+				var formatted = JSON.stringify(tokenobj, undefined, 2);
+				//console.log("tokenobj is", tokenobj);
+				cognito_groups= tokenobj["cognito:groups"];
+				//console.log("groups array is ", tokenobj["cognito:groups"]);  
+ 				document.getElementById('idtoken').innerHTML = formatted;
+			}
+			var accToken = session.getAccessToken().getJwtToken();
+			if (accToken) {
+				//console.log("accToken");
+				var payload = accToken.split('.')[1];
+				var tokenobj = JSON.parse(atob(payload));
+				var formatted = JSON.stringify(tokenobj, undefined, 2);
+				//console.log("acctoken",tokenobj);
+				document.getElementById('acctoken').innerHTML = formatted;
+			}
+			var refToken = session.getRefreshToken().getToken();
+			  
+			if (refToken) {
+				document.getElementById('reftoken').innerHTML = refToken.substring(1, 20);
+			}
+		}
+		openTab("userdetails");
+		return cognito_groups;
+		
+	}
+	// Operations when signed out.
+	function showSignedOut() {
+		document.getElementById("statusNotAuth").style.display = 'block';
+		document.getElementById("statusAuth").style.display = 'none';
+		document.getElementById('idtoken').innerHTML = " ... ";
+		document.getElementById('acctoken').innerHTML = " ... ";
+		document.getElementById('reftoken').innerHTML = " ... ";
+		closeTab("userdetails");
+		
+	}
+  // Initialize a cognito auth object.
+
+	function initCognitoSDK() {
+		AWS.config.region ='ap-northeast-1';
+
+		var authData = {
+			ClientId : '<app-client-id>', // Your APP client id here
+			AppWebDomain : '<your-custom-domain-name', // Exclude the "https://" part. 
+			//TokenScopesArray : ['openid','email'], // like ['openid','email','phone']...
+			TokenScopesArray : ['openid'], 
+			RedirectUriSignIn : 'http://localhost:8000',
+			//RedirectUriSignIn:"https://sdb53tv9o0.execute-api.ap-northeast-1.amazonaws.com/beta",
+			RedirectUriSignOut : 'http://localhost:8000',
+	        UserPoolId : '<user-pool-id>', 
+	        AdvancedSecurityDataCollectionFlag : false
+		};
+		var login = {};
+		var auth = new AmazonCognitoIdentity.CognitoAuth(authData);
+	
+		// You can also set state parameter 
+		// auth.setState(<state parameter>);  
+		auth.userhandler = {
+			 onSuccess: function (result) {
+              	//根据传递的值不同，这里可以为解析后的cognito_group,也可以是idtoken或是accessToken
+                var cognito_groups=  showSignedIn(result); 
+               $.ajax({
+				     url: "https://<API-address>/<stage>/",
+				     type: "GET",
+				     
+				     beforeSend: function(xhr){
+				     	xhr.setRequestHeader('Authorization', cognito_groups)  ; 
+				     	xhr.setRequestHeader('Access-Control-Allow-Origin','*');
+				     },
+				     success: function(data) { 
+				     	
+				     	console.log(data); 
+				 }
+				});
+
+            },
+            onFailure: function (err) {
+            	console.log('error',err);
+          
+            }
+        
+		};
+		
+		return auth;
+	}
+
+
+
+	</script>
+</body>
+</html>

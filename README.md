@@ -27,7 +27,6 @@ Cognito为AWS提供的mobile端访问控制工具。利用Cognito User Pool，�
 
 有关于Cognito生成的JWT Token的更多解释，请点击[此页面](https://docs.aws.amazon.com/zh_cn/cognito/latest/developerguide/amazon-cognito-user-pools-using-tokens-verifying-a-jwt.html)
 
-[>>>本文用到的代码点击这里获取<<<<](https://github.com/lab798/cognito-group-combined-with-serverless/)
 
 ##	步骤
 #### 1. 创建cognito用户池user pool
@@ -111,7 +110,7 @@ deny的example policy如下：
 进入[lambda控制台](https://console.aws.amazon.com/lambda), 选择右上角按钮“创建函数”, 命名函数名称，选择python2.7作为语言，并且给lambda函数一个角色（role）。如果lambda函数有对AWS其他产品或服务的调用，则需确保lambda的角色有访问其他产品服务的权限，否则会报403 permission denied。有关于更多role的解释和说明，请参考[这里](https://docs.amazonaws.cn/lambda/latest/dg/lambda-intro-execution-role.html).
 ![](img/create-lambda-function.png)
 
-(1)我们校验前端传递过来的group信息并做判断。如果该user的group value为本组资源，则允许访问allow，否则deny.lambda python2.7参考代码如下, 也可以[点击这里下载](https://github.com/lab798/cognito-group-combined-with-serverless/blob/master/lambda.py)
+(1)我们校验前端传递过来的group信息并做判断。如果该user的group value为本组资源，则允许访问allow，否则deny.lambda python2.7参考代码如下, 也可以[点击这里下载](https://github.com/nwcdlabs/cognito-group-for-api-gateway-auth/blob/master/lambda.py)
 
 ```
 import json
@@ -153,7 +152,7 @@ def lambda_handler(event, context):
 ```
 
 （2）前端将完整的JWT token传递给后端
-cognito有三种token，分别为idToken, access Token以及refresh token。本demo当中附带的[index.html](https://github.com/lab798/cognito-group-combined-with-serverless/blob/master/index.html)通过前端的方式直观的展示了这三种token解析出来的payload。我们可以看到，idtoken与accesstoken解析出的claims包含cognito:groups，username，email等attribute。
+cognito有三种token，分别为idToken, access Token以及refresh token。本demo当中附带的[index.html](https://github.com/nwcdlabs/cognito-group-for-api-gateway-auth/blob/master/index.html)通过前端的方式直观的展示了这三种token解析出来的payload。我们可以看到，idtoken与accesstoken解析出的claims包含cognito:groups，username，email等attribute。
 ![](img/token.png)
 
 idToken与accessToken均由三个部分组成，header，payload，以及signature。格式是这样的11111111111.22222222222.33333333333
@@ -199,7 +198,7 @@ print(base64.b64decode(b64_string))  #解析后的完整json
 可在前端注册用户，添加group，并将用户添加到某个group当中。
 ![](https://s3.cn-northwest-1.amazonaws.com.cn/aws-quickstart/cognito-group-with-serverless/user-and-group.png)
 
-cognito JS核心代码如下，在代码可以demo用户登录获取token，解析token的过程。此demo的完整代码在[这里下载](https://github.com/lab798/cognito-group-combined-with-serverless/blob/master/index.html)，有关于cognito JS更多示例以及use case，可以点击[此页面](https://docs.aws.amazon.com/zh_cn/cognito/latest/developerguide/using-amazon-cognito-user-identity-pools-javascript-examples.html)查看。
+cognito JS核心代码如下，在代码可以demo用户登录获取token，解析token的过程。此demo的完整代码在[这里下载](https://github.com/nwcdlabs/cognito-group-for-api-gateway-auth/blob/master/index.html)，有关于cognito JS更多示例以及use case，可以点击[此页面](https://docs.aws.amazon.com/zh_cn/cognito/latest/developerguide/using-amazon-cognito-user-identity-pools-javascript-examples.html)查看。
 
 ```
 $.ajax({
